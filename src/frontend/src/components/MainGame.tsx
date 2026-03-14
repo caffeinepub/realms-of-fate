@@ -23,6 +23,11 @@ interface MainGameProps {
   character: Character;
 }
 
+function getCharacterClass(character: Character): string {
+  // charClass is a string enum value like "Warrior", "Mage", etc.
+  return String(character.charClass);
+}
+
 export default function MainGame({ character }: MainGameProps) {
   const [activeTab, setActiveTab] = useState("explore");
   const [activeEnemy, setActiveEnemy] = useState<string | null>(null);
@@ -44,6 +49,8 @@ export default function MainGame({ character }: MainGameProps) {
   const handleCommunityClick = () => {
     setActiveTab("community");
   };
+
+  const characterClass = getCharacterClass(character);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -119,6 +126,7 @@ export default function MainGame({ character }: MainGameProps) {
               activeEnemyHp={activeEnemyHp}
               playerMaxHp={Number(character.maxHp)}
               playerCurrentHp={Number(character.hp)}
+              characterClass={characterClass}
               onCombatEnd={handleCombatEnd}
             />
           </TabsContent>

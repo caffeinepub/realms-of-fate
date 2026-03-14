@@ -3,10 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Shield, Star, Sword, Wand2, Zap } from "lucide-react";
+import {
+  Heart,
+  Loader2,
+  Lock,
+  Shield,
+  Star,
+  Sword,
+  Wand2,
+  Zap,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Class, Race } from "../backend";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useCreateCharacter } from "../hooks/useQueries";
 
 const RACES = [
@@ -111,17 +122,25 @@ export default function CharacterCreation({
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const createCharacter = useCreateCharacter();
+  const { identity, login, isLoggingIn } = useInternetIdentity();
 
-  const canSubmit = name.trim().length > 0 && selectedRace && selectedClass;
+  const isAuthenticated = !!identity;
+  const canSubmit =
+    name.trim().length > 0 && selectedRace && selectedClass && isAuthenticated;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    const result = await createCharacter.mutateAsync({
-      name: name.trim(),
-      race: selectedRace!,
-      charClass: selectedClass!,
-    });
-    if (result.success) onCreated();
+    try {
+      const result = await createCharacter.mutateAsync({
+        name: name.trim(),
+        race: selectedRace!,
+        charClass: selectedClass!,
+      });
+      if (result.success) onCreated();
+      else toast.error("Failed to create character. Try again.");
+    } catch (_err) {
+      toast.error("Something went wrong. Please try again.");
+    }
   };
 
   const selectedClassData = CLASSES.find((c) => c.value === selectedClass);
@@ -162,201 +181,272 @@ export default function CharacterCreation({
           </p>
         </motion.div>
 
-        {/* Name Input */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="fantasy-border bg-card/80 backdrop-blur-sm">
-            <CardContent className="pt-6">
-              <Label className="text-gold font-display text-lg mb-3 block">
-                Hero Name
-              </Label>
-              <Input
-                data-ocid="character_creation.input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name, brave soul..."
-                className="bg-input/50 border-border/60 text-foreground placeholder:text-muted-foreground text-lg h-12 font-body"
-                maxLength={30}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Race Selection */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <h2 className="font-display text-2xl text-gold mb-4">
-            Choose Your Race
-          </h2>
-          <div
-            className="grid grid-cols-2 md:grid-cols-4 gap-3"
-            data-ocid="character_creation.race.select"
-          >
-            {RACES.map((race) => (
-              <button
-                type="button"
-                key={race.value}
-                onClick={() => setSelectedRace(race.value)}
-                className={`p-4 rounded-lg text-left transition-all duration-200 fantasy-border ${
-                  selectedRace === race.value
-                    ? "bg-primary/15 border-primary/60 glow-gold"
-                    : "bg-card/60 hover:bg-card/80 hover:border-border/80"
-                }`}
-              >
-                <div className="text-2xl mb-2">{race.icon}</div>
-                <div className="font-display text-lg text-foreground">
-                  {race.label}
-                </div>
-                <div className="text-xs text-gold mt-1">{race.bonus}</div>
-                <div className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">
-                  {race.lore}
-                </div>
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Class Selection */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-        >
-          <h2 className="font-display text-2xl text-gold mb-4">
-            Choose Your Class
-          </h2>
-          <div
-            className="grid grid-cols-2 md:grid-cols-4 gap-3"
-            data-ocid="character_creation.class.select"
-          >
-            {CLASSES.map((cls) => (
-              <button
-                type="button"
-                key={cls.value}
-                onClick={() => setSelectedClass(cls.value)}
-                className={`p-4 rounded-lg text-left transition-all duration-200 fantasy-border ${
-                  selectedClass === cls.value
-                    ? "bg-primary/15 border-primary/60 glow-gold"
-                    : "bg-card/60 hover:bg-card/80 hover:border-border/80"
-                }`}
-              >
-                <div className={`mb-2 ${cls.color}`}>{cls.icon}</div>
-                <div className="font-display text-lg text-foreground">
-                  {cls.label}
-                </div>
-                <div className="text-xs text-muted-foreground mt-2 leading-relaxed mb-3">
-                  {cls.description}
-                </div>
-                {selectedClass === cls.value && (
-                  <div className="space-y-1">
-                    <StatBar label="HP" value={cls.stats.hp} color="bg-hp" />
-                    <StatBar label="MP" value={cls.stats.mp} color="bg-mp" />
-                    <StatBar
-                      label="ATK"
-                      value={cls.stats.atk}
-                      color="bg-accent"
-                    />
-                    <StatBar
-                      label="DEF"
-                      value={cls.stats.def}
-                      color="bg-primary"
-                    />
-                    <StatBar label="SPD" value={cls.stats.spd} color="bg-xp" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Preview + Submit */}
-        {canSubmit && selectedClassData && (
+        {/* Login Gate */}
+        {!isAuthenticated && (
           <motion.div
             className="mb-8"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <Card className="fantasy-border glow-gold bg-card/80 backdrop-blur-sm">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <h3 className="font-display text-2xl text-gold">{name}</h3>
-                    <div className="flex gap-2 mt-2">
-                      <Badge
-                        variant="outline"
-                        className="border-border text-foreground"
-                      >
-                        {RACES.find((r) => r.value === selectedRace)?.label}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className={`border-border ${selectedClassData.color}`}
-                      >
-                        {selectedClassData.label}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="text-center">
-                      <Shield className="w-5 h-5 text-hp mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">HP</div>
-                      <div className="text-sm font-bold text-foreground">
-                        {selectedClassData.stats.hp * 10 + 50}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <Star className="w-5 h-5 text-mp mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">MP</div>
-                      <div className="text-sm font-bold text-foreground">
-                        {selectedClassData.stats.mp * 10 + 20}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <Sword className="w-5 h-5 text-accent mx-auto mb-1" />
-                      <div className="text-xs text-muted-foreground">ATK</div>
-                      <div className="text-sm font-bold text-foreground">
-                        {selectedClassData.stats.atk * 3 + 5}
-                      </div>
-                    </div>
+            <Card className="fantasy-border glow-gold bg-card/90 backdrop-blur-sm">
+              <CardContent className="pt-6 pb-6 text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                    <Lock className="w-6 h-6 text-gold" />
                   </div>
                 </div>
+                <div>
+                  <h2 className="font-display text-xl text-gold mb-1">
+                    Sign In to Begin
+                  </h2>
+                  <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                    You must be signed in to create your hero and save your
+                    progress across sessions.
+                  </p>
+                </div>
+                <Button
+                  data-ocid="auth.submit_button"
+                  onClick={login}
+                  disabled={isLoggingIn}
+                  className="px-8 py-5 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90 glow-gold transition-all duration-300"
+                  size="lg"
+                >
+                  {isLoggingIn ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Signing In...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" /> Login to Play
+                    </span>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        <motion.div
-          className="flex justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-        >
-          <Button
-            data-ocid="character_creation.submit_button"
-            onClick={handleSubmit}
-            disabled={!canSubmit || createCharacter.isPending}
-            className="px-12 py-6 text-xl font-display bg-primary text-primary-foreground hover:bg-primary/90 glow-gold transition-all duration-300 disabled:opacity-40"
-            size="lg"
-          >
-            {createCharacter.isPending ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin">⚔️</span> Forging Hero...
-              </span>
-            ) : (
-              "Begin Adventure"
+        {/* Character Form — only when authenticated */}
+        {isAuthenticated && (
+          <>
+            {/* Name Input */}
+            <motion.div
+              className="mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="fantasy-border bg-card/80 backdrop-blur-sm">
+                <CardContent className="pt-6">
+                  <Label className="text-gold font-display text-lg mb-3 block">
+                    Hero Name
+                  </Label>
+                  <Input
+                    data-ocid="character_creation.input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name, brave soul..."
+                    className="bg-input/50 border-border/60 text-foreground placeholder:text-muted-foreground text-lg h-12 font-body"
+                    maxLength={30}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Race Selection */}
+            <motion.div
+              className="mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <h2 className="font-display text-2xl text-gold mb-4">
+                Choose Your Race
+              </h2>
+              <div
+                className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                data-ocid="character_creation.race.select"
+              >
+                {RACES.map((race) => (
+                  <button
+                    type="button"
+                    key={race.value}
+                    onClick={() => setSelectedRace(race.value)}
+                    className={`p-4 rounded-lg text-left transition-all duration-200 fantasy-border ${
+                      selectedRace === race.value
+                        ? "bg-primary/15 border-primary/60 glow-gold"
+                        : "bg-card/60 hover:bg-card/80 hover:border-border/80"
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{race.icon}</div>
+                    <div className="font-display text-lg text-foreground">
+                      {race.label}
+                    </div>
+                    <div className="text-xs text-gold mt-1">{race.bonus}</div>
+                    <div className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">
+                      {race.lore}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Class Selection */}
+            <motion.div
+              className="mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <h2 className="font-display text-2xl text-gold mb-4">
+                Choose Your Class
+              </h2>
+              <div
+                className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                data-ocid="character_creation.class.select"
+              >
+                {CLASSES.map((cls) => (
+                  <button
+                    type="button"
+                    key={cls.value}
+                    onClick={() => setSelectedClass(cls.value)}
+                    className={`p-4 rounded-lg text-left transition-all duration-200 fantasy-border ${
+                      selectedClass === cls.value
+                        ? "bg-primary/15 border-primary/60 glow-gold"
+                        : "bg-card/60 hover:bg-card/80 hover:border-border/80"
+                    }`}
+                  >
+                    <div className={`mb-2 ${cls.color}`}>{cls.icon}</div>
+                    <div className="font-display text-lg text-foreground">
+                      {cls.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-2 leading-relaxed mb-3">
+                      {cls.description}
+                    </div>
+                    {selectedClass === cls.value && (
+                      <div className="space-y-1">
+                        <StatBar
+                          label="HP"
+                          value={cls.stats.hp}
+                          color="bg-hp"
+                        />
+                        <StatBar
+                          label="MP"
+                          value={cls.stats.mp}
+                          color="bg-mp"
+                        />
+                        <StatBar
+                          label="ATK"
+                          value={cls.stats.atk}
+                          color="bg-accent"
+                        />
+                        <StatBar
+                          label="DEF"
+                          value={cls.stats.def}
+                          color="bg-primary"
+                        />
+                        <StatBar
+                          label="SPD"
+                          value={cls.stats.spd}
+                          color="bg-xp"
+                        />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Preview + Submit */}
+            {canSubmit && selectedClassData && (
+              <motion.div
+                className="mb-8"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="fantasy-border glow-gold bg-card/80 backdrop-blur-sm">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div>
+                        <h3 className="font-display text-2xl text-gold">
+                          {name}
+                        </h3>
+                        <div className="flex gap-2 mt-2">
+                          <Badge
+                            variant="outline"
+                            className="border-border text-foreground"
+                          >
+                            {RACES.find((r) => r.value === selectedRace)?.label}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={`border-border ${selectedClassData.color}`}
+                          >
+                            {selectedClassData.label}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="text-center">
+                          <Shield className="w-5 h-5 text-hp mx-auto mb-1" />
+                          <div className="text-xs text-muted-foreground">
+                            HP
+                          </div>
+                          <div className="text-sm font-bold text-foreground">
+                            {selectedClassData.stats.hp * 10 + 50}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <Star className="w-5 h-5 text-mp mx-auto mb-1" />
+                          <div className="text-xs text-muted-foreground">
+                            MP
+                          </div>
+                          <div className="text-sm font-bold text-foreground">
+                            {selectedClassData.stats.mp * 10 + 20}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <Sword className="w-5 h-5 text-accent mx-auto mb-1" />
+                          <div className="text-xs text-muted-foreground">
+                            ATK
+                          </div>
+                          <div className="text-sm font-bold text-foreground">
+                            {selectedClassData.stats.atk * 3 + 5}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
-          </Button>
-        </motion.div>
+
+            <motion.div
+              className="flex justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+            >
+              <Button
+                data-ocid="character_creation.submit_button"
+                onClick={handleSubmit}
+                disabled={!canSubmit || createCharacter.isPending}
+                className="px-12 py-6 text-xl font-display bg-primary text-primary-foreground hover:bg-primary/90 glow-gold transition-all duration-300 disabled:opacity-40"
+                size="lg"
+              >
+                {createCharacter.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⚔️</span> Forging Hero...
+                  </span>
+                ) : (
+                  "Begin Adventure"
+                )}
+              </Button>
+            </motion.div>
+          </>
+        )}
       </div>
     </div>
   );
