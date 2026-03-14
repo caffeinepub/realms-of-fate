@@ -1,0 +1,207 @@
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-weight: 200 700;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark fantasy palette - dark mode only */
+    --background: 0.08 0.015 265;
+    --foreground: 0.92 0.02 80;
+
+    --card: 0.11 0.02 265;
+    --card-foreground: 0.92 0.02 80;
+
+    --popover: 0.1 0.02 265;
+    --popover-foreground: 0.92 0.02 80;
+
+    --primary: 0.74 0.14 82;
+    --primary-foreground: 0.08 0.01 265;
+
+    --secondary: 0.16 0.03 265;
+    --secondary-foreground: 0.85 0.02 80;
+
+    --muted: 0.14 0.02 265;
+    --muted-foreground: 0.55 0.04 265;
+
+    --accent: 0.5 0.2 22;
+    --accent-foreground: 0.97 0.01 80;
+
+    --destructive: 0.5 0.22 22;
+    --destructive-foreground: 0.97 0.01 80;
+
+    --border: 0.2 0.04 265;
+    --input: 0.16 0.03 265;
+    --ring: 0.74 0.14 82;
+
+    --radius: 0.375rem;
+
+    /* Game-specific tokens */
+    --hp-bar: 0.55 0.22 22;
+    --mp-bar: 0.55 0.22 252;
+    --xp-bar: 0.74 0.14 82;
+    --gold: 0.78 0.16 82;
+    --parchment-bg: 0.18 0.04 75;
+    --parchment-fg: 0.88 0.04 85;
+    --glow-gold: 0.74 0.14 82;
+    --glow-red: 0.55 0.22 22;
+
+    --chart-1: 0.55 0.22 22;
+    --chart-2: 0.55 0.22 252;
+    --chart-3: 0.74 0.14 82;
+    --chart-4: 0.6 0.18 150;
+    --chart-5: 0.65 0.15 300;
+
+    --sidebar: 0.09 0.02 265;
+    --sidebar-foreground: 0.92 0.02 80;
+    --sidebar-primary: 0.74 0.14 82;
+    --sidebar-primary-foreground: 0.08 0.01 265;
+    --sidebar-accent: 0.14 0.02 265;
+    --sidebar-accent-foreground: 0.85 0.02 80;
+    --sidebar-border: 0.2 0.04 265;
+    --sidebar-ring: 0.74 0.14 82;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "General Sans", sans-serif;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+}
+
+@layer components {
+  .parchment {
+    background: oklch(var(--parchment-bg));
+    color: oklch(var(--parchment-fg));
+    border: 1px solid oklch(var(--gold) / 0.4);
+    box-shadow: inset 0 0 30px oklch(var(--gold) / 0.05);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px oklch(var(--glow-gold) / 0.3), 0 0 40px
+      oklch(var(--glow-gold) / 0.1);
+  }
+
+  .glow-red {
+    box-shadow: 0 0 20px oklch(var(--glow-red) / 0.4), 0 0 40px
+      oklch(var(--glow-red) / 0.15);
+  }
+
+  .fantasy-border {
+    border: 1px solid oklch(var(--gold) / 0.35);
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.6), inset 0 1px 0
+      oklch(var(--gold) / 0.15);
+  }
+
+  .danger-pulse {
+    animation: danger-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  .text-gold {
+    color: oklch(var(--gold));
+  }
+  .text-hp {
+    color: oklch(var(--hp-bar));
+  }
+  .text-mp {
+    color: oklch(var(--mp-bar));
+  }
+  .bg-hp {
+    background-color: oklch(var(--hp-bar));
+  }
+  .bg-mp {
+    background-color: oklch(var(--mp-bar));
+  }
+  .bg-xp {
+    background-color: oklch(var(--xp-bar));
+  }
+}
+
+@keyframes danger-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px oklch(var(--glow-red) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px oklch(var(--glow-red) / 0.8), 0 0 60px
+      oklch(var(--glow-red) / 0.3);
+  }
+}
+
+@keyframes dice-roll {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(90deg) scale(1.2);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.8);
+  }
+  75% {
+    transform: rotate(270deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.dice-rolling {
+  animation: dice-roll 0.6s ease-in-out;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: oklch(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(var(--gold) / 0.5);
+}
